@@ -1,7 +1,9 @@
 # Sandbox image for running Claude Code with --dangerously-skip-permissions,
 # with the blast radius contained to a single bind-mounted /workspace.
 # See USAGE.md (next to this file) for the flow.
-FROM node:24-bookworm
+# Base pinned by digest for reproducible builds. To update: re-pull node:24-bookworm
+# and replace the digest below.
+FROM node:24-bookworm@sha256:5711a0d445a1af54af9589066c646df387d1831a608226f4cd694fc59e745059
 
 # --- Build args: match the host user so bind-mounted files aren't root-owned ---
 # Relevant on macOS/Linux (default macOS user is UID 501 / GID 20). On Windows +
@@ -19,11 +21,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dumb-init \
  && rm -rf /var/lib/apt/lists/*
 
-# --- Global CLIs: Claude Code + Playwright ---
-RUN npm install -g @anthropic-ai/claude-code playwright@latest
+# --- Global CLIs: Claude Code + Playwright (pinned for reproducibility) ---
+# The Playwright CLI and library versions must match, or the browser download
+# won't line up with the installed library. Bump both together.
+RUN npm install -g @anthropic-ai/claude-code@2.1.214 playwright@1.61.1
 
 # Install Chromium's OS-level libraries as root (needs apt).
-RUN npx --yes playwright install-deps chromium
+RUN npx --yes playwright@1.61.1 install-deps chromium
 
 # --- Non-root user (required: skip-permissions refuses to run as root) ---
 # The group for HOST_GID may already exist in the base image (e.g. GID 20), so
@@ -43,7 +47,7 @@ RUN mkdir -p /opt/pw-browsers && chown "${HOST_UID}:${HOST_GID}" /opt/pw-browser
 USER ${USERNAME}
 WORKDIR /workspace
 
-RUN npx --yes playwright install chromium
+RUN npx --yes playwright@1.61.1 install chromium
 
 # dumb-init reaps zombie Chromium processes cleanly.
 ENTRYPOINT ["dumb-init", "--"]
