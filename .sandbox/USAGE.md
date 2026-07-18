@@ -21,7 +21,9 @@ From your **project root** (the folder that contains `.sandbox/`):
    claude --dangerously-skip-permissions
    ```
 4. Authenticate when prompted, then tell it what to build.
-5. `exit` to tear the container down. Nothing persists; auth is re-entered next run.
+5. `exit` to tear the container down. The container is ephemeral, so you
+   re-authenticate next run — this is convenience, not a security guarantee: while
+   a session is live, the credential sits inside the container and is readable there.
 
 ## Telling the agent about the browser + port
 
